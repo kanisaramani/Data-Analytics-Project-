@@ -1,0 +1,246 @@
+The link to the EDA code is this:
+https://colab.research.google.com/drive/1KF6Q-whcWoHeFIN2tLd8FulElK1_ENvy?usp=sharing
+
+# Import necessary libraries
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+import scipy.stats as stats
+from scipy.stats import shapiro
+
+# Load the dataset
+airline_data = pd.read_csv(r"/content/Airline_customer_satisfaction.csv")
+
+# Explore the first 10 rows of the dataset
+airline_data.head(10)
+
+#Check for the number of rows as values and columns as variables in the dataset
+airline_data.shape
+
+# Check for duplicates in the dataset
+airline_data.duplicated().sum()
+
+# Check for the columns in the dataset
+air_col_name = airline_data.columns
+air_col_name
+
+# Check for missing values in the dataset
+air_null = airline_data.isnull().sum().sort_values(ascending=False)
+air_null
+
+# Show the overview of Statistical properties of the numerical variables.
+round(airline_data.describe(),1) #set to a decimal point
+
+
+# Show the total number of values, the unique values, the most frequent value(top) and its frequency for all categorical features
+airline_data.describe(include="object")
+
+### EDA VISUALIZATIONS
+1. Making a heatmap for Numerical Columns in the Dataset
+# Create a dataframe to store the  numerical variables and their values
+airline_num = airline_data.select_dtypes(include=["int64", "float64"])
+airline_num.head()
+
+###EDA VISUALIZATION
+# Plot a heatmap for the numerical variables in the dataset to show correlation between numerical variables in the dataset
+
+sns.set(rc={'figure.figsize':(16,14)})
+sns.heatmap(airline_num.corr(), annot=True)
+
+2. Creating Histogram Plots for the Numerical Columns in the dataset
+### EDA VISUALIZATIONS
+#put the list of numerical columns into the num_columns variable
+num_columns = airline_num.columns
+
+#calculate the number of rows needed for the subplot grid
+num_row = len(num_columns) // 3 + (len(num_columns) % 3 > 0)
+
+#Put the number of columns for the subplot grid to be shown
+num_col = 3
+
+#Create a figure and axes of subplots
+fig, axes = plt.subplots(num_row, num_col, figsize=(18,5*num_row))
+
+#flatten the axes array to easily iterate through
+axes = axes.flatten()
+
+#create a for loop to iterate each numerical column and create a histogram for each column
+for a, column in enumerate(num_columns):
+    ax = axes[a]    #get the current axis using index a
+
+    #plot the histogram for the current column
+    ax.hist(airline_num[column], bins=20, color='skyblue', edgecolor='black')
+
+    #Label the x-axis as value of the column name
+    ax.set_xlabel(f"Value of {column}")
+
+    #Label the y-axis as Frequency of the column name
+    ax.set_ylabel(f"Frequency of {column}")
+
+    #add text annotation for subplot index
+    ax.text(0.05,0.95, f"({a+1})", transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
+    #Remove grid lines
+    ax.grid(False)
+
+#Remove any unused subplots to avoid showing empty plots
+for i in range(len(num_columns), num_col * num_row):
+    fig.delaxes(axes[i])
+
+#Adjust the layout to neatly fit the subplots within the figure
+plt.tight_layout()
+plt.show()  # display the plots
+
+3. Creating Pie Charts for Categorical Columns in the Dataset
+# Create a dataframe to store the  categorical variables and their values
+airline_cat = airline_data.select_dtypes(include=["object"])
+airline_cat.head()
+
+### EDA VISUALIZATIONS
+#put the list of categorical columns into the cat_columns variable
+cat_columns = airline_cat.columns
+
+#calculate the number of rows needed for the subplot grid
+cat_row = len(cat_columns) // 2 + (len(cat_columns) % 2 > 0)
+
+#Put the number of columns for the subplot grid to be shown
+cat_col = 2
+
+#Create a figure and axes of subplots
+fig, axes = plt.subplots(cat_row, cat_col, figsize=(10,5*cat_row))
+
+#flatten the axes array to easily iterate through
+axes = axes.flatten()
+
+#create a for loop to iterate each categorical column and create a pie chart for each column
+for b, column in enumerate(cat_columns):
+    ax = axes[b]    #get the current axis using index b
+
+    #calculate the count of values for the categorical column
+    cat_value = airline_cat[column].value_counts()
+
+    #plot the pie chart for the current column
+    cat_value.plot(kind='pie', ax=ax, autopct='%1.1f%%', startangle=90, colors=plt.cm.Paired.colors, labels=cat_value.index)
+
+    #Add Legend to each column
+    ax.legend([column], loc='upper right')
+
+    #add text annotation for subplot index
+    ax.text(0.05,0.95, f"({b+1})", transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
+    #Remove grid lines
+    ax.grid(False)
+
+
+#Remove any unused subplots to avoid showing empty plots
+for i in range(len(cat_columns), cat_col * cat_row):
+    fig.delaxes(axes[i])
+
+#Adjust the layout to neatly fit the subplots within the figure
+plt.tight_layout()
+plt.show()  # display the plots
+
+4. Checking for Ouliers and Visualizing Using Box Plots
+Before going ahead, we need to temporaily drop the missing values in Arrival Delay In Minutes column so that the boxplot can be plotted.
+#drop the missing values in the numerical column dataframe and save into a new variable.
+cleaned_air_num = airline_num.dropna(subset=['Arrival Delay in Minutes'])
+cleaned_air_num
+
+# Create a dataframe to store the  numerical variables and their values
+a = cleaned_air_num.select_dtypes(include=["int64", "float64"])
+
+#put the columns in a list
+q = a.columns
+
+#Put the number of columns for the subplot grid to be shown
+num_col = 3
+
+#calculate the number of rows needed for the subplot grid
+num_row = len(q) // 3 + (len(q) % 3 > 0)
+
+#Create a figure and axes of subplots
+fig, axes = plt.subplots(num_row, num_col, figsize=(18,5*num_row))
+
+#flatten the axes array to easily iterate through
+axes = axes.flatten()
+
+#create a for loop to iterate each numerical column and create a boxplot for each column
+for c, column in enumerate(q):
+    ax = axes[c] if c < len(q) else None #get the current axis using index c
+
+    if ax is not None:
+        #plot the histogram for the current column
+        ax.boxplot(a[column])
+
+        #Label the x-axis as value of the column name
+        ax.set_xlabel(f"Boxplot of {column}")
+
+        #add text annotation for subplot index
+        ax.text(0.05,0.95, f"({c+1})", transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
+        #Remove grid lines
+        ax.grid(False)
+
+
+#Adjust the layout to neatly fit the subplots within the figure
+plt.tight_layout()
+plt.show()  # display the plots
+
+5. Checking for normality using Q-Q Plots
+### EDA VISUALIZATIONS
+#put the columns in a list
+q_q = cleaned_air_num.columns
+
+#Put the number of columns for the subplot grid to be shown
+num_col = 3
+
+#calculate the number of rows needed for the subplot grid
+num_row = len(q_q) // 3 + (len(q_q) % 3 > 0)
+
+#Create a figure and axes of subplots
+fig, axes = plt.subplots(num_row, num_col, figsize=(16,5*num_row))
+
+#flatten the axes array to easily iterate through
+axes = axes.flatten()
+
+#create a for loop to iterate each numerical column and create a histogram for each column
+for c, column in enumerate(q_q):
+    ax = axes[c] if c < len(q_q) else None #get the current axis using index c
+
+    if ax is not None:
+        #Generate a Q-Q Plot
+        stats.probplot(cleaned_air_num[column], dist='norm', plot=ax)
+
+        #Label the x-axis as value of the column name
+        ax.set_xlabel(f"Q-Q Plot of {column}")
+
+        #add text annotation for subplot index
+        ax.text(0.05,0.95, f"({c+1})", transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
+        #Remove grid lines
+        ax.grid(False)
+
+
+#Adjust the layout to neatly fit the subplots within the figure
+plt.tight_layout()
+plt.show()  # display the plots
+
+6. Checking for Normality Using Shapiro-Wilk Test
+#Create a For Loop to iterate through each numerical column
+for col in cleaned_air_num:
+    #perform shapiro test on each column
+    stat, p_value= shapiro(cleaned_air_num[col])
+
+    #Intepret the result
+    if p_value > 0.05:
+        interpretation = 'The Data is normally distributed (fail to reject H0)'
+    else:
+        interpretation = 'The Data is  not normally distributed (reject H0)'
+
+    #print the results for all numerical columns
+    print(f"Column: {col}")
+    print(f"Shapiro-Wilk Statistic: {stat}")
+    print(f"p-value: {p_value}")
+    print(f"Interpretation: {interpretation}\n")
+
